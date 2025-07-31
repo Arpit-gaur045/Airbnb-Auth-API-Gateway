@@ -19,7 +19,7 @@ type Config struct {
 
 type Application struct {
 	Config Config
-	Store db.Storage
+
 }
 //Constructor for Config
 func NewConfig() Config {
@@ -33,7 +33,7 @@ func NewConfig() Config {
 func NewApplication(cfg Config) *Application {
 	return &Application{
 		Config: cfg,
-		Store: *db.NewStorage(),
+		
 	}
 }
 
@@ -42,7 +42,7 @@ func (app *Application) Run() error {
 	us:= services.NewUserService(ur)
 	uc:= controllers.NewUserController(us)
 	uRouter:=router.NewUserRouter(uc)
-	
+
 	server := &http.Server{
 		Addr:    app.Config.Addr,
 		Handler: router.SetupRouter(uRouter),
