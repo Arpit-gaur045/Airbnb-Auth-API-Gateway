@@ -21,6 +21,6 @@ func NewUserService(_userReposiotry db.UserRepository) UserService {
 
 func (u *UserServiceImpl) GetUserById() error {
 	fmt.Println("Fetching user in UserService")
-	u.userRepository.Create()
+	u.userRepository.DeleteByID(3)
 	return nil
 }
