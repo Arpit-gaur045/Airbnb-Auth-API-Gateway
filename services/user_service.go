@@ -4,12 +4,14 @@ import (
 	db "AuthInGo/db/repositories"
 	"AuthInGo/utils"
 	"fmt"
+     env "AuthInGo/config/env"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type UserService interface {
 	GetUserById() error
 	CreateUser() error
-	LoginUser() error
+	LoginUser() (string,error)
 }
 
 type UserServiceImpl struct {
@@ -51,11 +53,59 @@ func (u *UserServiceImpl) CreateUser() error {
   return nil
 }
 
-func (u *UserServiceImpl) LoginUser() error {
-	fmt.Println("Logging in user in UserService")
-	response:=utils.CheckPasswordHash("example_password_wrong", "")
-	fmt.Println("Login response:", response)
-	return nil
+func (u *UserServiceImpl) LoginUser() (string,error) {
+	//Pre-requisite: This function will be given email and password as 
+	//parameter, which we can hardcode for now.
+	email:="user@example001.com"
+	password:="example_password"
+
+	//Step 1: Make a repository call to get user by email
+	user,err:=u.userRepository.GetByEmail(email)
+	//Step 2: if user exists, or not. if not exists,return error
+	if err != nil {
+		fmt.Println("Error fetching user by email:", err)
+		return "",err
+	}
+
+	if user == nil {
+		fmt.Println("no user found with the given email")
+		return "",err
+	}
+
+	//Step 3: if user exists, check the password using utils.CheckPasswordHash
+	isPasswordValid := utils.CheckPasswordHash(password, user.Password)
+
+	// Step 4: if password matches, return a JWT token , else return error saying password does not match
+	if(!isPasswordValid) {
+		fmt.Println("Password does not match")
+		return "", err
+	}
+
+	// token, err := createToken(user.Username)
+	// if err != nil {
+	// 	fmt.Println("Error creating token:", err)
+	// 	return "", err
+	// }
+	// fmt.Println("Token created successfully:", token)
+
+    jwtPayload := jwt.MapClaims{
+		"email": user.Email,
+		"id":    user.Id,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtPayload)
+
+	tokenString, err := token.SignedString([]byte(env.GetString("JWT_SECRET", "TOKEN")))
+
+	if err != nil {
+		fmt.Println("Error signing token:", err)
+		return "", err
+	}
+
+	fmt.Println("JWT Token:", tokenString)
+
+	return tokenString, nil
+
 }
 
 
